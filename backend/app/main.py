@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.db import close_db, init_db
 from app.routes.health import router as health_router
 
 
@@ -16,7 +17,9 @@ from app.routes.health import router as health_router
 async def lifespan(app: FastAPI):
     """Ciclo de vida de la aplicación: startup y shutdown."""
     print("[BACKEND] Iniciando Sistema de Monitoreo Acuapónico...")
+    await init_db()
     yield
+    await close_db()
     print("[BACKEND] Cerrando sistema...")
 
 
