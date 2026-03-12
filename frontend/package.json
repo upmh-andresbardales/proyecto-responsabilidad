@@ -15,7 +15,7 @@
     "mqtt": "^5.10.0",
     "echarts": "^5.5.1",
     "vue-echarts": "^7.0.3",
-    "apexcharts": "^4.3.0",
+    "apexcharts": "^5.10.0",
     "vue3-apexcharts": "^1.7.0"
   },
   "devDependencies": {

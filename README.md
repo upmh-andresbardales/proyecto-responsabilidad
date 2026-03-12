@@ -34,7 +34,7 @@ Este proyecto implementa una plataforma completa de monitoreo IoT para acuaponí
                               └──────┬──────┘
                                      │
                               ┌──────▼──────┐     WebSocket
-                              │  Frontend   │◀──────────────── EMQX (:8083)
+                              │  Frontend   │◀──────────────── EMQX (:8084)
                               │   (Vue 3)   │     (mqtt.js)
                               └─────────────┘
 ```
@@ -43,8 +43,8 @@ Este proyecto implementa una plataforma completa de monitoreo IoT para acuaponí
 
 | Componente | Tecnología | Puerto |
 |------------|-----------|--------|
-| Broker MQTT | EMQX | 1883 (MQTT), 8083 (WebSocket), 18083 (Dashboard) |
-| Base de Datos | MongoDB | 27017 |
+| Broker MQTT | EMQX | 1884 (MQTT), 8084 (WebSocket), 18084 (Dashboard) |
+| Base de Datos | MongoDB | 27018 |
 | Backend API | FastAPI + Python 3.12 | 8000 |
 | Frontend | Vue 3 + Vite + TypeScript | 3000 |
 | Simulador | Python + paho-mqtt | - |
@@ -75,7 +75,7 @@ docker compose up --build
 
 | Servicio | URL | Credenciales |
 |----------|-----|-------------|
-| Dashboard EMQX | http://localhost:18083 | admin / public |
+| Dashboard EMQX | http://localhost:18084 | admin / public |
 | API Swagger | http://localhost:8000/docs | - |
 | Frontend Dashboard | http://localhost:3000 | - |
 

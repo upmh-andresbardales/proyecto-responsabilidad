@@ -27,7 +27,7 @@ export interface AlertData {
 }
 
 // Configuración MQTT
-const MQTT_URL = import.meta.env.VITE_MQTT_URL || 'ws://localhost:8083/mqtt'
+const MQTT_URL = import.meta.env.VITE_MQTT_URL || 'ws://localhost:8084/mqtt'
 const SYSTEM_ID = import.meta.env.VITE_SYSTEM_ID || 'sistema-01'
 const BASE_TOPIC = import.meta.env.VITE_MQTT_BASE_TOPIC || 'acuaponia'
 
