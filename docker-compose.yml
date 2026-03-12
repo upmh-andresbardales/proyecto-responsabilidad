@@ -50,6 +50,27 @@ services:
       timeout: 5s
       retries: 5
 
+  # ============================================
+  # Simulador de Datos Sintéticos
+  # ============================================
+  simulator:
+    build:
+      context: ./simulator
+      dockerfile: Dockerfile
+    container_name: acuaponia-simulator
+    restart: unless-stopped
+    environment:
+      MQTT_BROKER_HOST: ${MQTT_BROKER_HOST:-emqx}
+      MQTT_BROKER_PORT: ${MQTT_BROKER_PORT:-1883}
+      SYSTEM_ID: ${SYSTEM_ID:-sistema-01}
+      MQTT_BASE_TOPIC: ${MQTT_BASE_TOPIC:-acuaponia}
+      SENSOR_PUBLISH_INTERVAL: ${SENSOR_PUBLISH_INTERVAL:-5}
+    depends_on:
+      emqx:
+        condition: service_healthy
+    networks:
+      - acuaponia-net
+
 networks:
   acuaponia-net:
     driver: bridge
