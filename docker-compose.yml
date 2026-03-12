@@ -27,6 +27,29 @@ services:
       timeout: 5s
       retries: 5
 
+  # ============================================
+  # MongoDB - Base de Datos
+  # ============================================
+  mongo:
+    image: mongo:latest
+    container_name: acuaponia-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-acuaponia2026}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-acuaponia}
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - acuaponia-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 networks:
   acuaponia-net:
     driver: bridge
@@ -34,3 +57,4 @@ networks:
 volumes:
   emqx-data:
   emqx-log:
+  mongo-data:
