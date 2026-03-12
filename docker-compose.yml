@@ -71,6 +71,33 @@ services:
     networks:
       - acuaponia-net
 
+  # ============================================
+  # Backend - FastAPI
+  # ============================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: acuaponia-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      MONGO_URI: ${MONGO_URI:-mongodb://admin:acuaponia2026@mongo:27017/acuaponia?authSource=admin}
+      MONGO_DB_NAME: ${MONGO_INITDB_DATABASE:-acuaponia}
+      MQTT_BROKER_HOST: ${MQTT_BROKER_HOST:-emqx}
+      MQTT_BROKER_PORT: ${MQTT_BROKER_PORT:-1883}
+      MQTT_BASE_TOPIC: ${MQTT_BASE_TOPIC:-acuaponia}
+      SYSTEM_ID: ${SYSTEM_ID:-sistema-01}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:80}
+    depends_on:
+      mongo:
+        condition: service_healthy
+      emqx:
+        condition: service_healthy
+    networks:
+      - acuaponia-net
+
 networks:
   acuaponia-net:
     driver: bridge
