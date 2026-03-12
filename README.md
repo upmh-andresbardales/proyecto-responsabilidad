@@ -12,6 +12,33 @@ Este proyecto implementa una plataforma completa de monitoreo IoT para acuaponí
 - **Frontend (Vue 3)**: Dashboard de visualización con gauges y gráficas temporales
 - **Simulador**: Generador de datos sintéticos para desarrollo y pruebas
 
+## 🏛️ Arquitectura
+
+```
+┌─────────────┐     MQTT      ┌─────────────┐     MQTT      ┌─────────────┐
+│  Simulador  │──────────────▶│    EMQX     │◀──────────────│   ESP32 /   │
+│  (Python)   │   Publica     │   Broker    │   (Futuro)    │ Raspberry   │
+└─────────────┘               └──────┬──────┘               └─────────────┘
+                                     │
+                              Suscribe (aiomqtt)
+                                     │
+                              ┌──────▼──────┐
+                              │   Backend   │
+                              │  (FastAPI)  │
+                              └──────┬──────┘
+                                     │
+                              ┌──────▼──────┐
+                              │   MongoDB   │
+                              │ (Telemetría │
+                              │  + Alertas) │
+                              └──────┬──────┘
+                                     │
+                              ┌──────▼──────┐     WebSocket
+                              │  Frontend   │◀──────────────── EMQX (:8083)
+                              │   (Vue 3)   │     (mqtt.js)
+                              └─────────────┘
+```
+
 ## 🏗️ Stack Tecnológico
 
 | Componente | Tecnología | Puerto |
@@ -67,7 +94,49 @@ docker compose up --build
 | Presión Atmosférica | 950 - 1050 | hPa | < 900 o > 1100 |
 | Flujo de Agua | 1.0 - 10.0 | L/min | < 0.5 |
 
-## 🔌 Conexión con Hardware Real
+## � Estructura del Proyecto
+
+```
+proyecto-responsabilidad/
+├── backend/                 # API REST + suscriptor MQTT
+│   ├── app/
+│   │   ├── models/          # Modelos Beanie (MongoDB ODM)
+│   │   ├── routes/          # Endpoints REST
+│   │   ├── services/        # MQTT client, predicciones
+│   │   ├── config.py        # Configuracion con pydantic-settings
+│   │   ├── db.py            # Conexion a MongoDB
+│   │   └── main.py          # Punto de entrada FastAPI
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/                # Dashboard Vue 3
+│   ├── src/
+│   │   ├── components/      # SensorGauge, TimeSeries, AlertPanel
+│   │   ├── composables/     # useMqtt, useApi
+│   │   ├── types/           # Configuracion de sensores
+│   │   ├── views/           # Dashboard principal
+│   │   └── main.ts
+│   ├── Dockerfile
+│   └── package.json
+├── simulator/               # Generador de datos sinteticos
+│   ├── generator.py
+│   ├── Dockerfile
+│   └── requirements.txt
+├── docs/                    # Documentacion tecnica
+│   ├── data-reference.md    # Payloads, schemas, API, alertas
+│   └── topicos-mqtt.md      # Jerarquia de topicos MQTT
+├── docker-compose.yml       # Orquestacion de servicios
+├── .env.example             # Variables de entorno (plantilla)
+└── README.md
+```
+
+## 📚 Documentación
+
+| Documento | Descripción |
+|-----------|-------------|
+| [docs/data-reference.md](docs/data-reference.md) | Payloads JSON, schemas MongoDB, endpoints API, alertas, Docker |
+| [docs/topicos-mqtt.md](docs/topicos-mqtt.md) | Jerarquía de tópicos MQTT y convenciones |
+
+## �🔌 Conexión con Hardware Real
 
 Para conectar sensores reales (ESP32/Raspberry Pi), simplemente publica datos MQTT al broker en el formato esperado:
 
