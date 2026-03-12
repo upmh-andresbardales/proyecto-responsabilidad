@@ -31,7 +31,9 @@ async def get_latest_readings():
         },
         {"$sort": {"sensor_type": 1}},
     ]
-    results = await SensorReading.aggregate(pipeline).to_list()
+    col = SensorReading.get_motor_collection()
+    cursor = col.aggregate(pipeline)
+    results = await cursor.to_list(length=100)
     return results
 
 
@@ -79,7 +81,9 @@ async def get_sensor_stats(
         },
         {"$sort": {"sensor_type": 1}},
     ]
-    results = await SensorReading.aggregate(pipeline).to_list()
+    col = SensorReading.get_motor_collection()
+    cursor = col.aggregate(pipeline)
+    results = await cursor.to_list(length=100)
 
     return [
         SensorStats(
