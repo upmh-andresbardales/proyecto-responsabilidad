@@ -41,9 +41,20 @@
     <!-- Time Series Charts -->
     <section class="section">
       <h2 class="section-title">📈 Historial Temporal</h2>
+      <div class="ts-selector">
+        <button
+          v-for="sensor in sensorConfig"
+          :key="'btn-' + sensor.type"
+          class="ts-btn"
+          :class="{ active: selectedSensors.includes(sensor.type) }"
+          @click="toggleSensor(sensor.type)"
+        >
+          {{ sensor.icon }} {{ sensor.label }}
+        </button>
+      </div>
       <div class="grid-charts">
         <SensorTimeSeries
-          v-for="sensor in sensorConfig.slice(0, 4)"
+          v-for="sensor in visibleTimeSeries"
           :key="'ts-' + sensor.type"
           :sensor-type="sensor.type"
           :label="sensor.label"
@@ -83,6 +94,22 @@ const currentTime = ref('')
 let timeInterval: ReturnType<typeof setInterval>
 
 const sensorConfig = SENSOR_CONFIGS
+
+// Sensor selection for time series
+const selectedSensors = ref(['ph', 'temperatura_agua', 'oxigeno_disuelto', 'flujo_agua'])
+
+const visibleTimeSeries = computed(() =>
+  sensorConfig.filter((s) => selectedSensors.value.includes(s.type))
+)
+
+function toggleSensor(type: string) {
+  const idx = selectedSensors.value.indexOf(type)
+  if (idx >= 0) {
+    selectedSensors.value.splice(idx, 1)
+  } else {
+    selectedSensors.value.push(type)
+  }
+}
 
 function updateTime() {
   currentTime.value = new Date().toLocaleString('es-MX', {
@@ -190,6 +217,35 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
   gap: 1rem;
+}
+
+.ts-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.ts-btn {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ts-btn:hover {
+  border-color: var(--accent-blue);
+  color: var(--text-primary);
+}
+
+.ts-btn.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
 }
 
 @media (max-width: 768px) {
