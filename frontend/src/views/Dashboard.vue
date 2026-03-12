@@ -74,6 +74,7 @@ import SensorGauge from '@/components/SensorGauge.vue'
 import SensorTimeSeries from '@/components/SensorTimeSeries.vue'
 import AlertPanel from '@/components/AlertPanel.vue'
 import SystemStatus from '@/components/SystemStatus.vue'
+import { SENSOR_CONFIGS } from '@/types/sensors'
 
 const systemId = import.meta.env.VITE_SYSTEM_ID || 'sistema-01'
 const { connected: mqttConnected, sensorData, alerts, connect } = useMqtt()
@@ -81,18 +82,7 @@ const { connected: mqttConnected, sensorData, alerts, connect } = useMqtt()
 const currentTime = ref('')
 let timeInterval: ReturnType<typeof setInterval>
 
-const sensorConfig = [
-  { type: 'ph', label: 'pH', unit: 'pH', gaugeMin: 0, gaugeMax: 14, normalMin: 6.0, normalMax: 8.5, color: '#3b82f6' },
-  { type: 'temperatura_agua', label: 'Temp. Agua', unit: '°C', gaugeMin: 0, gaugeMax: 50, normalMin: 18, normalMax: 30, color: '#ef4444' },
-  { type: 'oxigeno_disuelto', label: 'Oxígeno Disuelto', unit: 'mg/L', gaugeMin: 0, gaugeMax: 15, normalMin: 5, normalMax: 9, color: '#06b6d4' },
-  { type: 'nivel_agua', label: 'Nivel de Agua', unit: 'cm', gaugeMin: 0, gaugeMax: 150, normalMin: 30, normalMax: 100, color: '#8b5cf6' },
-  { type: 'temperatura_ambiente', label: 'Temp. Ambiente', unit: '°C', gaugeMin: -10, gaugeMax: 60, normalMin: 15, normalMax: 40, color: '#f59e0b' },
-  { type: 'humedad_ambiente', label: 'Humedad', unit: '%', gaugeMin: 0, gaugeMax: 100, normalMin: 40, normalMax: 80, color: '#10b981' },
-  { type: 'conductividad_electrica', label: 'Conductividad', unit: 'mS/cm', gaugeMin: 0, gaugeMax: 6, normalMin: 0.5, normalMax: 3.0, color: '#ec4899' },
-  { type: 'turbidez', label: 'Turbidez', unit: 'NTU', gaugeMin: 0, gaugeMax: 200, normalMin: 0, normalMax: 50, color: '#a855f7' },
-  { type: 'presion_atmosferica', label: 'Presión Atm.', unit: 'hPa', gaugeMin: 850, gaugeMax: 1150, normalMin: 950, normalMax: 1050, color: '#64748b' },
-  { type: 'flujo_agua', label: 'Flujo de Agua', unit: 'L/min', gaugeMin: 0, gaugeMax: 20, normalMin: 1, normalMax: 10, color: '#0ea5e9' },
-]
+const sensorConfig = SENSOR_CONFIGS
 
 function updateTime() {
   currentTime.value = new Date().toLocaleString('es-MX', {
