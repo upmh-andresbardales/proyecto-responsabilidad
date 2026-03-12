@@ -26,8 +26,15 @@ export interface AlertData {
   system_id: string
 }
 
-// Configuración MQTT
-const MQTT_URL = import.meta.env.VITE_MQTT_URL || 'ws://localhost:8084/mqtt'
+// Configuración MQTT - usa la IP del browser para producción
+function getMqttUrl(): string {
+  if (import.meta.env.VITE_MQTT_URL) return import.meta.env.VITE_MQTT_URL
+  const host = window.location.hostname
+  const port = 8084
+  return `ws://${host}:${port}/mqtt`
+}
+
+const MQTT_URL = getMqttUrl()
 const SYSTEM_ID = import.meta.env.VITE_SYSTEM_ID || 'sistema-01'
 const BASE_TOPIC = import.meta.env.VITE_MQTT_BASE_TOPIC || 'acuaponia'
 

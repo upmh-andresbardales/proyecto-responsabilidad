@@ -50,3 +50,12 @@ mongo-data/
 # Logs
 *.log
 logs/
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/.terraform.lock.hcl
+infra/terraform.tfvars
+infra/*.pem
+infra/*.ppk

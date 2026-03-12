@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     system_id: str = "sistema-01"
     backend_host: str = "0.0.0.0"
     backend_port: int = 8000
-    cors_origins: str = "http://localhost:3000,http://localhost:80,http://frontend:80"
+    cors_origins: str = "*"
 
     class Config:
         env_file = ".env"
