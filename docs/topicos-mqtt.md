@@ -9,7 +9,7 @@ acuaponia/{system_id}/actuator/{actuator_type}/cmd    → Comandos a actuadores
 acuaponia/{system_id}/actuator/{actuator_type}/status → Estado de actuadores
 acuaponia/{system_id}/alert                           → Alertas del sistema
 ```
-
+/relevador1
 ## Tópicos de Sensores
 
 | # | Sensor | Tópico Completo | QoS |

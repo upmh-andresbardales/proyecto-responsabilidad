@@ -1,6 +1,8 @@
 fastapi==0.115.*
 uvicorn[standard]==0.34.*
-beanie==2.*
-motor==3.*
+beanie==1.27.*
+motor==3.6.*
 pydantic-settings==2.*
 aiomqtt==2.*
+passlib[bcrypt]==1.7.*
+bcrypt==4.0.*

@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.db import close_db, init_db
+from app.routes.auth import router as auth_router
 from app.routes.health import router as health_router
 from app.routes.sensors import router as sensors_router
 from app.services.mqtt_client import mqtt_subscriber
@@ -52,5 +53,6 @@ app.add_middleware(
 
 # Routers
 app.include_router(health_router, tags=["Health"])
+app.include_router(auth_router)
 app.include_router(sensors_router)
 app.include_router(prediction_router)

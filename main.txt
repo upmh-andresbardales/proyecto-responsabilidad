@@ -1,0 +1,367 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{setspace}
+\geometry{letterpaper, margin=2.5cm}
+\setstretch{1.15}
+
+\title{Reporte Tecnico Detallado\\Sistema de Monitoreo Acuaponico Inteligente}
+\author{Equipo OptiMind Four\\Maestria en Inteligencia Artificial - UPMH}
+\date{Marzo 2026}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+
+\begin{center}
+\textbf{Materia:} Responsabilidad Social \\
+\textbf{Docente:} Dr. Victor Dario Cuervo Pinto \\
+\textbf{Integrantes:} Jose Andres Bardales Calva, Misael Martin Lopez, David Olvera Gonzalez, Mauro Alberto Ramos Angeles
+\end{center}
+
+\newpage
+\tableofcontents
+\newpage
+
+\section{Resumen Ejecutivo}
+Este proyecto implementa una plataforma IoT para monitoreo acuaponico en tiempo real. La solucion integra simulacion de sensores, mensajeria MQTT, persistencia en MongoDB, API REST en FastAPI y visualizacion web en Vue 3.
+
+La arquitectura fue disenada para ser agnostica a la fuente de datos. Actualmente opera con datos sinteticos, pero esta lista para integrar sensores fisicos mediante ESP32 o Raspberry Pi sin cambios mayores en la logica de negocio.
+
+El sistema ya cumple el flujo completo de extremo a extremo:
+\begin{enumerate}
+\item Generacion de datos de sensores.
+\item Publicacion por MQTT en EMQX.
+\item Consumo en backend y guardado en MongoDB.
+\item Generacion de alertas por umbrales.
+\item Exposicion de datos por API REST.
+\item Visualizacion en dashboard web en tiempo real.
+\end{enumerate}
+
+\newpage
+\section{Objetivo y Alcance del Proyecto}
+\subsection{Objetivo General}
+Desarrollar una plataforma tecnologica para el monitoreo de variables criticas en sistemas acuaponicos, con capacidades de visualizacion, analitica basica y soporte a decisiones.
+
+\subsection{Objetivos Especificos}
+\begin{itemize}
+\item Capturar telemetria de sensores de forma continua.
+\item Almacenar historicos y alertas para trazabilidad.
+\item Visualizar estado del sistema en tiempo real.
+\item Habilitar autenticacion y gestion basica de usuarios.
+\item Exponer endpoints REST para integraciones futuras.
+\item Preparar base para incorporar modelo predictivo de IA.
+\end{itemize}
+
+\subsection{Alcance Actual}
+Incluye infraestructura, backend, frontend, base de datos y simulador. La etapa de hardware real y calibracion fisica se considera fase posterior.
+
+\newpage
+\section{Arquitectura General del Sistema}
+\subsection{Componentes Principales}
+\begin{itemize}
+\item \textbf{EMQX}: broker MQTT para mensajeria IoT.
+\item \textbf{Simulator}: publica datos sinteticos cada 5 segundos.
+\item \textbf{Backend FastAPI}: suscribe MQTT, persiste datos y expone API.
+\item \textbf{MongoDB}: almacena lecturas, alertas y usuarios.
+\item \textbf{Frontend Vue 3}: dashboard con graficas, alertas y autenticacion.
+\end{itemize}
+
+\subsection{Diagrama de Flujo Logico}
+\begin{enumerate}
+\item El simulador publica mensajes en topicos MQTT de sensores.
+\item EMQX distribuye mensajes a suscriptores.
+\item El backend consume mensajes, valida y almacena en MongoDB.
+\item Si se detectan umbrales fuera de rango, el backend crea alertas.
+\item El frontend consulta datos por REST y escucha cambios en tiempo real por MQTT WebSocket.
+\end{enumerate}
+
+\newpage
+\section{Infraestructura y Orquestacion}
+\subsection{Servicios en Docker Compose}
+\begin{longtable}{p{3.2cm}p{4cm}p{2.8cm}p{4.2cm}}
+\toprule
+\textbf{Servicio} & \textbf{Imagen/Build} & \textbf{Puerto Host} & \textbf{Responsabilidad} \\
+\midrule
+EMQX & emqx/emqx:latest & 1884, 8084, 18084 & Broker MQTT, WebSocket y dashboard \\
+MongoDB & mongo:latest & 27018 & Persistencia de telemetria, alertas y usuarios \\
+Simulator & build ./simulator & - & Publicacion continua de datos sinteticos \\
+Backend & build ./backend & 8000 & API REST, suscripcion MQTT, reglas de alertas \\
+Frontend & build ./frontend & 3000 & Dashboard web para monitoreo y operacion \\
+\bottomrule
+\end{longtable}
+
+\subsection{Variables Relevantes de Configuracion}
+\begin{itemize}
+\item \texttt{MQTT\_BROKER\_HOST=emqx}
+\item \texttt{MQTT\_BROKER\_PORT=1883}
+\item \texttt{MONGO\_URI=mongodb://admin:acuaponia2026@mongo:27017/acuaponia?authSource=admin}
+\item \texttt{MONGO\_DB\_NAME=acuaponia}
+\item \texttt{SYSTEM\_ID=sistema-01}
+\item \texttt{SENSOR\_PUBLISH\_INTERVAL=5}
+\end{itemize}
+
+\newpage
+\section{Comunicacion MQTT y Topicos}
+\subsection{Estructura de Topicos}
+\begin{itemize}
+\item \texttt{acuaponia/\{system\_id\}/sensor/\{sensor\_type\}/data}
+\item \texttt{acuaponia/\{system\_id\}/sensor/\{sensor\_type\}/status}
+\item \texttt{acuaponia/\{system\_id\}/actuator/\{actuator\_type\}/cmd}
+\item \texttt{acuaponia/\{system\_id\}/actuator/\{actuator\_type\}/status}
+\item \texttt{acuaponia/\{system\_id\}/alert}
+\end{itemize}
+
+\subsection{Sensores Monitoreados}
+\begin{enumerate}
+\item ph
+\item temperatura\_agua
+\item oxigeno\_disuelto
+\item nivel\_agua
+\item temperatura\_ambiente
+\item humedad\_ambiente
+\item conductividad\_electrica
+\item turbidez
+\item presion\_atmosferica
+\item flujo\_agua
+\end{enumerate}
+
+\subsection{Ejemplo de Payload de Sensor}
+\begin{verbatim}
+{
+  "sensor_id": "ph-01",
+  "value": 7.2,
+  "unit": "pH",
+  "timestamp": "2026-03-11T20:00:00Z",
+  "system_id": "sistema-01"
+}
+\end{verbatim}
+
+\newpage
+\section{Backend FastAPI}
+\subsection{Responsabilidades}
+\begin{itemize}
+\item Exponer API REST para sensores, alertas, usuarios y autenticacion.
+\item Suscribirse a MQTT para recibir telemetria.
+\item Persistir lecturas y alertas en MongoDB.
+\item Ejecutar reglas de umbral para deteccion de alertas.
+\item Servir endpoints de estadistica y soporte analitico basico.
+\end{itemize}
+
+\subsection{Endpoints Principales}
+\begin{longtable}{p{3cm}p{5cm}p{7cm}}
+\toprule
+\textbf{Metodo} & \textbf{Ruta} & \textbf{Descripcion} \\
+\midrule
+GET & /health & Estado del backend \\
+POST & /api/auth/login & Inicio de sesion \\
+GET & /api/users & Lista de usuarios \\
+POST & /api/users & Alta de usuario \\
+GET & /api/users/\{username\} & Consulta puntual de usuario \\
+PUT & /api/users/\{username\} & Actualizacion de usuario \\
+DELETE & /api/users/\{username\} & Eliminacion de usuario \\
+GET & /api/sensors/latest & Ultima lectura por tipo de sensor \\
+GET & /api/sensors/\{sensor\_type\}/history & Historico por sensor \\
+GET & /api/sensors/stats & Estadisticas agregadas por sensor \\
+DELETE & /api/sensors/\{sensor\_type\}/history & Limpieza de historial antiguo \\
+GET & /api/alerts & Lista de alertas \\
+GET & /api/alerts/count & Conteo de alertas activas \\
+PUT & /api/alerts/\{alert\_id\}/acknowledge & Reconocimiento de alerta \\
+DELETE & /api/alerts/\{alert\_id\} & Eliminacion de alerta \\
+POST & /api/predict & Prediccion (actualmente mock) \\
+\bottomrule
+\end{longtable}
+
+\newpage
+\section{Base de Datos y Modelo de Informacion}
+\subsection{Motor de Persistencia}
+Se utiliza MongoDB por su flexibilidad para telemetria de alta frecuencia y estructura documental.
+
+\subsection{Colecciones Principales}
+\begin{itemize}
+\item \textbf{sensor\_readings}: lecturas historicas por sensor.
+\item \textbf{alerts}: eventos fuera de umbral con severidad.
+\item \textbf{users}: usuarios para autenticacion y acceso.
+\end{itemize}
+
+\subsection{Datos Almacenados por Lectura}
+\begin{itemize}
+\item sensor\_id
+\item sensor\_type
+\item value
+\item unit
+\item timestamp
+\item system\_id
+\end{itemize}
+
+\subsection{Datos Almacenados por Alerta}
+\begin{itemize}
+\item alert\_id
+\item sensor\_type
+\item value
+\item threshold
+\item severity
+\item message
+\item acknowledged
+\item timestamp
+\item system\_id
+\end{itemize}
+
+\newpage
+\section{Frontend Vue 3}
+\subsection{Capacidades Implementadas}
+\begin{itemize}
+\item Dashboard principal con indicadores y series temporales.
+\item Panel de alertas con severidad y estado.
+\item Conexion MQTT WebSocket para actualizaciones en tiempo real.
+\item Integracion REST para carga inicial de datos.
+\item Pantalla de login y control de sesion.
+\item Guard de rutas para proteger el dashboard.
+\end{itemize}
+
+\subsection{Flujo de Usuario}
+\begin{enumerate}
+\item Usuario accede a la aplicacion web.
+\item Inicia sesion con credenciales validas.
+\item El sistema carga ultimas lecturas y alertas por REST.
+\item El dashboard continua actualizando valores por MQTT.
+\item El usuario monitorea estado y puede cerrar sesion.
+\end{enumerate}
+
+\newpage
+\section{Seguridad, Acceso y Credenciales de Trabajo}
+\subsection{Autenticacion del Sistema Web}
+Usuarios de prueba habilitados por seed al iniciar backend:
+\begin{itemize}
+\item andres
+\item david
+\item misael
+\item mauro
+\end{itemize}
+
+Contrasena comun de prueba: \texttt{OptiMind2026!}
+
+\subsection{Acceso a MongoDB desde Compass}
+Cadena de conexion local:
+\begin{verbatim}
+mongodb://admin:acuaponia2026@localhost:27018/acuaponia?authSource=admin
+\end{verbatim}
+
+\subsection{Acceso a EMQX Dashboard}
+\begin{itemize}
+\item URL: \texttt{http://localhost:18084}
+\item Usuario: \texttt{admin}
+\item Password: \texttt{public}
+\end{itemize}
+
+\newpage
+\section{Pruebas y Validacion Realizadas}
+\subsection{Validaciones Funcionales Confirmadas}
+\begin{itemize}
+\item Levante correcto de los 5 contenedores.
+\item Estado healthy en EMQX y MongoDB.
+\item Respuesta positiva de \texttt{/health}.
+\item Login exitoso con usuarios seed.
+\item Consulta de usuarios y endpoints CRUD activos.
+\item Lecturas de 10 sensores en \texttt{/api/sensors/latest}.
+\item Alertas y estadisticas retornando datos.
+\item Frontend accesible en \texttt{http://localhost:3000}.
+\item Proxy Nginx hacia API funcionando en \texttt{/api/*}.
+\end{itemize}
+
+\subsection{Ajustes Tecnicos Aplicados Durante la Puesta a Punto}
+\begin{itemize}
+\item Compatibilidad Beanie/Motor corregida con versiones estables.
+\item Compatibilidad Passlib/Bcrypt corregida para arranque estable.
+\item Ajuste de metodo de coleccion Mongo para Beanie 1.x.
+\item Correccion de duplicidad en servicio Mongo de Docker Compose.
+\end{itemize}
+
+\newpage
+\section{Estado de Tareas del Proyecto}
+\subsection{Tareas Cumplidas}
+\begin{itemize}
+\item Infraestructura base en Docker y despliegue operativo.
+\item Pipeline de despliegue configurado y funcional.
+\item Persistencia de datos y alertas automaticas.
+\item Dashboard en tiempo real.
+\item CRUD sensores, alertas y usuarios.
+\item Login frontend y proteccion de rutas.
+\item Modelo relacional documentado.
+\item Investigacion de condiciones hidroponicas documentada.
+\item Integracion REST + MQTT en frontend.
+\end{itemize}
+
+\subsection{Tareas Parciales}
+\begin{itemize}
+\item Modelo predictivo: endpoint funcional en modo mock, falta modelo Keras final.
+\item Validacion CI/CD avanzada: despliegue activo, faltan pruebas automatizadas mas robustas.
+\end{itemize}
+
+\subsection{Tareas Pendientes}
+\begin{itemize}
+\item Integracion con hardware real y calibracion fisica de sensores.
+\end{itemize}
+
+\subsection{Tarea Descartada}
+\begin{itemize}
+\item Integracion n8n: descartada y reemplazada por flujo con agentes IA.
+\end{itemize}
+
+\newpage
+\section{Impacto, Beneficios y Uso Academico}
+\subsection{Beneficios Tecnicos}
+\begin{itemize}
+\item Arquitectura modular y escalable.
+\item Trazabilidad completa de telemetria y alertas.
+\item Base tecnica lista para sensores reales.
+\item Plataforma reutilizable para practicas de IA e IoT.
+\end{itemize}
+
+\subsection{Beneficios Academicos}
+\begin{itemize}
+\item Evidencia verificable por componente.
+\item Integracion multidisciplinaria (backend, frontend, datos, nube).
+\item Documentacion formal para entregables CEPAL.
+\item Entorno demostrable para evaluaciones y exposiciones.
+\end{itemize}
+
+\newpage
+\section{Conclusiones}
+El proyecto se encuentra funcional en su arquitectura digital completa. La cadena de monitoreo, almacenamiento, visualizacion y gestion de usuarios esta implementada y probada. El sistema puede operar hoy con datos sinteticos y esta preparado para transicionar a hardware real.
+
+Las siguientes mejoras estrategicas son: entrenar e integrar el modelo predictivo final en Keras, fortalecer pruebas automatizadas de CI/CD y cerrar la validacion fisica con sensores reales calibrados.
+
+En terminos de entrega academica, el avance actual presenta evidencia solida, trazable y alineada con los objetivos definidos para la plataforma acuaponica inteligente.
+
+\newpage
+\section{Anexo: URLs Operativas}
+\begin{itemize}
+\item Frontend: \url{http://localhost:3000}
+\item Backend API: \url{http://localhost:8000}
+\item Swagger: \url{http://localhost:8000/docs}
+\item EMQX Dashboard: \url{http://localhost:18084}
+\item MongoDB Host local para Compass: \texttt{localhost:27018}
+\end{itemize}
+
+\section{Anexo: Comandos de Ejecucion}
+\begin{verbatim}
+# Levantar plataforma
+cd proyecto-responsabilidad
+docker compose up --build -d
+
+# Ver estado de servicios
+docker compose ps
+
+# Ver logs de backend
+docker logs acuaponia-backend --tail 100
+\end{verbatim}
+
+\end{document}

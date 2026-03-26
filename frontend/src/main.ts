@@ -32,11 +32,27 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
+      path: '/login',
+      name: 'login',
+      component: () => import('./views/LoginView.vue'),
+    },
+    {
       path: '/',
       name: 'dashboard',
       component: () => import('./views/Dashboard.vue'),
+      meta: { requiresAuth: true },
     },
   ],
+})
+
+// Auth guard
+router.beforeEach((to) => {
+  if (to.meta.requiresAuth) {
+    const stored = sessionStorage.getItem('auth_user')
+    if (!stored) {
+      return { name: 'login' }
+    }
+  }
 })
 
 const app = createApp(App)

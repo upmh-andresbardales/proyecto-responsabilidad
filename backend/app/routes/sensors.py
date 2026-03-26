@@ -1,12 +1,12 @@
 """
-Endpoints REST para sensores y alertas.
+Endpoints REST para sensores y alertas — CRUD completo.
 """
 
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from beanie import SortDirection
-from fastapi import APIRouter, Query
+from beanie import PydanticObjectId, SortDirection
+from fastapi import APIRouter, HTTPException, Query, status
 
 from app.models.sensor import Alert, AlertResponse, SensorReading, SensorReadingResponse, SensorStats
 
@@ -31,7 +31,7 @@ async def get_latest_readings():
         },
         {"$sort": {"sensor_type": 1}},
     ]
-    col = SensorReading.get_pymongo_collection()
+    col = SensorReading.get_motor_collection()
     cursor = col.aggregate(pipeline)
     results = await cursor.to_list(length=100)
     return results
@@ -81,7 +81,7 @@ async def get_sensor_stats(
         },
         {"$sort": {"sensor_type": 1}},
     ]
-    col = SensorReading.get_pymongo_collection()
+    col = SensorReading.get_motor_collection()
     cursor = col.aggregate(pipeline)
     results = await cursor.to_list(length=100)
 
@@ -136,3 +136,37 @@ async def get_alert_count():
     ).count()
 
     return {"total": total, "critical": critical, "warning": warning}
+
+
+@router.put("/alerts/{alert_id}/acknowledge")
+async def acknowledge_alert(alert_id: str):
+    """Marcar una alerta como reconocida."""
+    alert = await Alert.find_one(Alert.alert_id == alert_id)
+    if not alert:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alerta no encontrada")
+    alert.acknowledged = True
+    await alert.save()
+    return {"acknowledged": True, "alert_id": alert_id}
+
+
+@router.delete("/alerts/{alert_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_alert(alert_id: str):
+    """Eliminar una alerta."""
+    alert = await Alert.find_one(Alert.alert_id == alert_id)
+    if not alert:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alerta no encontrada")
+    await alert.delete()
+
+
+@router.delete("/sensors/{sensor_type}/history", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_sensor_history(
+    sensor_type: str,
+    minutes: int = Query(default=60, ge=1, le=1440, description="Borrar lecturas más antiguas que estos minutos"),
+):
+    """Eliminar lecturas antiguas de un sensor."""
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=minutes)
+    result = await SensorReading.find(
+        SensorReading.sensor_type == sensor_type,
+        SensorReading.timestamp < cutoff,
+    ).delete()
+    return None

@@ -12,6 +12,8 @@
           {{ mqttConnected ? 'MQTT Conectado' : 'Desconectado' }}
         </div>
         <span class="timestamp mono">{{ currentTime }}</span>
+        <span class="user-info mono" v-if="currentUser">{{ currentUser.username }}</span>
+        <button class="logout-btn" @click="handleLogout">Salir</button>
       </div>
     </header>
 
@@ -80,12 +82,18 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useMqtt } from '@/composables/useMqtt'
+import { useAuth } from '@/composables/useAuth'
+import { sensorsApi, alertsApi } from '@/composables/useApi'
 import SensorGauge from '@/components/SensorGauge.vue'
 import SensorTimeSeries from '@/components/SensorTimeSeries.vue'
 import AlertPanel from '@/components/AlertPanel.vue'
 import SystemStatus from '@/components/SystemStatus.vue'
 import { SENSOR_CONFIGS } from '@/types/sensors'
+
+const router = useRouter()
+const { currentUser, logout } = useAuth()
 
 const systemId = import.meta.env.VITE_SYSTEM_ID || 'sistema-01'
 const { connected: mqttConnected, sensorData, alerts, connect } = useMqtt()
@@ -118,8 +126,50 @@ function updateTime() {
   })
 }
 
+function handleLogout() {
+  logout()
+  router.push({ name: 'login' })
+}
+
+/** Load initial data from REST API to seed dashboard before MQTT pushes arrive */
+async function loadInitialData() {
+  try {
+    const { data: latest } = await sensorsApi.getLatest()
+    for (const reading of latest) {
+      sensorData[reading.sensor_type] = {
+        sensor_id: reading.sensor_id,
+        value: reading.value,
+        unit: reading.unit,
+        timestamp: reading.timestamp,
+        system_id: reading.system_id,
+      }
+    }
+  } catch {
+    // REST not available yet — MQTT will populate data
+  }
+  try {
+    const { data: restAlerts } = await alertsApi.getAlerts(20)
+    for (const a of restAlerts) {
+      alerts.value.push({
+        alert_id: a.alert_id,
+        sensor_type: a.sensor_type,
+        sensor_id: a.sensor_id,
+        value: a.value,
+        threshold: a.threshold,
+        severity: a.severity as 'warning' | 'critical',
+        message: a.message,
+        timestamp: a.timestamp,
+        system_id: a.system_id,
+      })
+    }
+  } catch {
+    // ignore
+  }
+}
+
 onMounted(() => {
   connect()
+  loadInitialData()
   updateTime()
   timeInterval = setInterval(updateTime, 1000)
 })
@@ -197,6 +247,27 @@ onUnmounted(() => {
 .timestamp {
   font-size: 0.8rem;
   color: var(--text-secondary);
+}
+
+.user-info {
+  font-size: 0.8rem;
+  color: var(--accent-blue);
+}
+
+.logout-btn {
+  padding: 0.3rem 0.7rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  border-color: var(--status-critical);
+  color: var(--status-critical);
 }
 
 .section {

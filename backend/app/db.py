@@ -8,6 +8,8 @@ from beanie import init_beanie
 
 from app.config import settings
 from app.models.sensor import Alert, SensorReading
+from app.models.user import User
+from app.services.user_seed import ensure_test_users
 
 # Cliente global de MongoDB
 _client: AsyncIOMotorClient | None = None
@@ -23,8 +25,9 @@ async def init_db():
 
     await init_beanie(
         database=db,
-        document_models=[SensorReading, Alert],
+        document_models=[SensorReading, Alert, User],
     )
+    await ensure_test_users()
     print(f"[DB] Conexion exitosa a base de datos '{settings.mongo_db_name}'")
 
 
